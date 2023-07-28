@@ -1,0 +1,8 @@
+[flake8]
+exclude = venv, masked_diffusion/model/guided_diffusion
+ignore = E501, W503, E226, E203, F401, F841
+max-line-length = 79
+
+# E501: Line too long
+# W503: Line break occurred before binary operator
+# E226: Missing white space around arithmetic operator

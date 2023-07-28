@@ -1,0 +1,28 @@
+data:
+  ixi:
+    dataset_name: iamkzntsv/IXI2D
+    data_dir: data/ixi/transformed
+model:
+  clip_denoised: true
+  num_samples: 4
+  batch_size: 1
+  image_size: 256
+  use_ddim: false
+  model_path: ""
+  lr: 0.001
+scheduler:
+  beta_end : 0.02
+  beta_start : 0.0001
+  beta_schedule: linear
+weights:
+  url: https://openaipublic.blob.core.windows.net/diffusion/jul-2021/256x256_diffusion_uncond.pt
+  save_dir: masked_diffusion/model/pretrained/weights_pretrained.pt
+trainer:
+  devices: 1
+  max_epochs: 10
+  accumulate_grad_batches: 8
+  fast_dev_run: false
+logging:
+  project: masked-diffusion-mri
+  log_model: true
+device: cuda
