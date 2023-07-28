@@ -3,10 +3,9 @@ import logging
 import os
 
 import torch
+import wandb
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
-
-import wandb
 
 from ..etl.ixi_dataset import IXIDataModule
 from ..model.repaint import RePaintDiffusion

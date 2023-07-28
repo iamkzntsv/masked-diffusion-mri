@@ -4,11 +4,10 @@ from typing import Any, Tuple
 import pytorch_lightning as pl
 import torch
 import torchvision.utils
+import wandb
 from diffusers import DDPMScheduler, RePaintPipeline
 from torch import optim
 from torch.nn import functional as F
-
-import wandb
 
 from ..model.guided_diffusion import dist_util
 from ..model.guided_diffusion.script_util import (

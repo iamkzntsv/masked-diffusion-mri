@@ -21,7 +21,7 @@ remove_environment:
 train: clean
 	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.train $(TRAIN_ARGS)
 
-train: clean
+infer: clean
 	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.infer $(INFER_ARGS)
 
 clean: style

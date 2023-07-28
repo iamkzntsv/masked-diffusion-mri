@@ -11,13 +11,13 @@ dependencies:
   - scikit-image
   - mpi4py
   - pip:
-    - torch==2.0.1
+    - torch
+    - pytorch-lightning
     - diffusers
     - datasets
     - opencv-python
     - nibabel==5.1.0
     - wandb==0.15.5
-    - pytorch-lightning==2.0.4
     - arrow==1.2.3
     - blessed==1.20.0
     - click==8.1.3
