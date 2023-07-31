@@ -11,7 +11,7 @@ from lightning.pytorch.utilities.types import (
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from .get_data import download_and_save_dataset
+from .data_utils import download_and_save_dataset
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,16 +20,16 @@ logger.setLevel(logging.INFO)
 class IXIDataModule(pl.LightningDataModule):
     def __init__(
         self,
-        data_dir: str = "./",
-        dataset_name: str = "./",
+        path: str = "./",
+        save_dir: str = "./",
         batch_size: int = 4,
         image_size: int = 256,
         num_workers: int = 1,
         **kwargs
     ) -> None:
         super().__init__()
-        self.data_dir = data_dir
-        self.dataset_name = dataset_name
+        self.path = path
+        self.save_dir = save_dir
         self.batch_size = batch_size
         self.image_size = image_size
         self.num_workers = num_workers
@@ -43,14 +43,14 @@ class IXIDataModule(pl.LightningDataModule):
         self.dims = None
 
     def prepare_data(self) -> None:
-        download_and_save_dataset(self.dataset_name, self.data_dir)
+        download_and_save_dataset(self.path, self.save_dir)
         logger.info("Training data has been successfully downloaded")
 
     def setup(self, stage: str = None) -> None:
         # Load training and validation data
         if stage == "fit" or stage is None:
-            self.train_ds = load_from_disk(os.path.join(self.data_dir, "train"))
-            self.val_ds = load_from_disk(os.path.join(self.data_dir, "validation"))
+            self.train_ds = load_from_disk(os.path.join(self.save_dir, "train"))
+            self.val_ds = load_from_disk(os.path.join(self.save_dir, "validation"))
 
             # Apply preprocessing
             self.train_ds.set_transform(self.preprocess)

@@ -55,7 +55,7 @@ def main(config):
     trainer.fit(repaint, data)
     logger.info("✅ Training complete!")
 
-    torch.save(repaint.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
+    torch.save(repaint.model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 
 if __name__ == "__main__":

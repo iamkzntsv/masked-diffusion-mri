@@ -7,6 +7,8 @@ import requests
 import torch
 import yaml
 
+FILENAMES = ["t1", "t1-voided", "mask"]
+
 
 def set_seeds(seed=42):
     """Set seeds for reproducibility."""
@@ -15,6 +17,10 @@ def set_seeds(seed=42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # multi-GPU
+
+
+def load_all_mri(dir_path):
+    return {filename: load_mri(os.path.join(dir_path, filename + ".mgz")) for filename in FILENAMES}
 
 
 def load_mri(path):
@@ -74,3 +80,13 @@ def update_config(config, args_dict):
 def count_parameters(model):
     params = sum([p.numel() for p in model.parameters() if p.requires_grad])
     return params
+
+
+def dir_path(string):
+    """
+    https://stackoverflow.com/questions/38834378/path-to-a-directory-as-argparse-argument
+    """
+    if os.path.isdir(string):
+        return string
+    else:
+        raise NotADirectoryError(string)

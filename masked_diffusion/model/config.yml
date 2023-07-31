@@ -1,7 +1,7 @@
 data:
   ixi:
-    dataset_name: iamkzntsv/IXI2D
-    data_dir: data/ixi/transformed
+    path: iamkzntsv/IXI2D
+    save_dir: data/ixi/transformed
 model:
   clip_denoised: true
   num_samples: 4
@@ -25,4 +25,4 @@ trainer:
 logging:
   project: masked-diffusion-mri
   log_model: true
-device: cuda
+device: cpu
