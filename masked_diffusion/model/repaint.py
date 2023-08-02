@@ -29,12 +29,12 @@ class RePaintDiffusion(pl.LightningModule):
 
         # Initialize UNet and DDPM scheduler
         config["model"].update(model_and_diffusion_defaults())
-        self.model, self.diffusion = create_model_and_diffusion(
+        model, self.diffusion = create_model_and_diffusion(
             **args_to_dict(config["model"], model_and_diffusion_defaults())
         )
         self.scheduler = DDPMScheduler(**self.config["scheduler"])
 
-        self.unet = UNetWrapper(self.model)
+        self.model = UNetWrapper(model)
 
         # Download pretrained model weights
         self.set_weights()
