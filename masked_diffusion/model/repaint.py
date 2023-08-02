@@ -30,12 +30,10 @@ class RePaintDiffusion(pl.LightningModule):
 
         # Initialize UNet and DDPM scheduler
         config["model"].update(model_and_diffusion_defaults())
-        model, self.diffusion = create_model_and_diffusion(
+        self.model, self.diffusion = create_model_and_diffusion(
             **args_to_dict(config["model"], model_and_diffusion_defaults())
         )
         self.scheduler = DDPMScheduler(**self.config["scheduler"])
-
-        self.model = UNetWrapper(model)
 
         # Download pretrained model weights
         self.set_weights()
@@ -44,6 +42,9 @@ class RePaintDiffusion(pl.LightningModule):
         # Set precision
         if self.config["model"]["use_fp16"]:
             self.model.convert_to_fp16()
+
+        # Add wrapper
+        self.model = UNetWrapper(self.model)
 
         # Create a pipeline
         self.pipe = RePaintPipeline(unet=self.model, scheduler=self.scheduler).to(config["device"])
