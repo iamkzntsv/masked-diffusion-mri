@@ -3,19 +3,19 @@ from typing import Any, Tuple
 
 import pytorch_lightning as pl
 import torch
+import torch.nn as nn
 import torchvision.utils
 import wandb
 from diffusers import DDPMScheduler, RePaintPipeline
 from torch import optim
 from torch.nn import functional as F
 
-from ..model.guided_diffusion import dist_util
 from ..model.guided_diffusion.script_util import (
     args_to_dict,
     create_model_and_diffusion,
     model_and_diffusion_defaults,
 )
-from ..utils import check_pretrained_weights
+from ..utils import check_pretrained_weights, count_parameters
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,6 +33,8 @@ class RePaintDiffusion(pl.LightningModule):
             **args_to_dict(config["model"], model_and_diffusion_defaults())
         )
         self.scheduler = DDPMScheduler(**self.config["scheduler"])
+
+        self.unet = UNetWrapper(self.model)
 
         # Download pretrained model weights
         self.set_weights()
@@ -133,9 +135,22 @@ class RePaintDiffusion(pl.LightningModule):
         # Check if weights exist in the folder, if not - download
         check_pretrained_weights(**self.config["weights"])
         self.config["model_path"] = self.config["weights"]["save_dir"]
-        state_dict = dist_util.load_state_dict(
-            self.config["weights"]["save_dir"], map_location="cpu"
-        )
 
         # Set model weights
-        self.model.load_state_dict(state_dict)
+        self.model.load_state_dict(torch.load(self.config["weights"]["save_dir"], map_location="cpu"))
+
+
+class UNetWrapper(nn.Module):
+    def __init__(self, unet):
+        super(UNetWrapper, self).__init__()
+        self.unet = unet
+
+    def forward(self, x):
+        # Create a stack of 3 grayscale images
+        x = torch.stack([x] * 3, dim=1)
+
+        # Run through the model layers
+        x = self.unet(x)
+
+        # Average over channels
+        x = torch.mean(x, dim=1, keepdim=True)

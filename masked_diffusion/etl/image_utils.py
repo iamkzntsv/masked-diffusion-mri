@@ -1,5 +1,6 @@
 import numpy as np
 from skimage import exposure
+from PIL import Image
 
 
 def center_crop(img, size, offset=15):

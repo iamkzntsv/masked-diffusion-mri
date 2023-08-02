@@ -10,6 +10,8 @@ from lightning.pytorch.utilities.types import (
 )
 from torch.utils.data import DataLoader
 from torchvision import transforms
+import torch
+import numpy as np
 
 from .data_utils import download_and_save_dataset
 
@@ -37,7 +39,7 @@ class IXIDataModule(pl.LightningDataModule):
             [
                 transforms.Resize((image_size, image_size)),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                transforms.Normalize(0.5, 0.5),
             ]
         )
         self.dims = None
@@ -57,7 +59,7 @@ class IXIDataModule(pl.LightningDataModule):
             self.val_ds.set_transform(self.preprocess)
 
     def preprocess(self, examples: Dataset) -> Dict[str, list[Any]]:
-        examples = [self.transform(image.convert("RGB")) for image in examples["image"]]
+        examples = [self.transform(image) for image in examples["image"]]
         return {"images": examples}
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
