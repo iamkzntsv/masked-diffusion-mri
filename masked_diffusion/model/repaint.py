@@ -146,7 +146,7 @@ class RePaintDiffusion(pl.LightningModule):
 
 class UNetWrapper(nn.Module):
     def __init__(self, unet):
-        super(UNetWrapper).__init__()
+        super(UNetWrapper, self).__init__()
         self.unet = unet
 
     def forward(self, x):
