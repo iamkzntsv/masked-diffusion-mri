@@ -149,6 +149,7 @@ class UNetWrapper(nn.Module):
     def __init__(self, unet):
         super(UNetWrapper, self).__init__()
         self.unet = unet
+        self.dtype = unet.dtype
 
     def forward(self, x):
         # Create a stack of 3 grayscale images
@@ -159,3 +160,5 @@ class UNetWrapper(nn.Module):
 
         # Average over channels
         x = torch.mean(x, dim=1, keepdim=True)
+
+
