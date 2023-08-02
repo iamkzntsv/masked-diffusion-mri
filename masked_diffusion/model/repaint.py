@@ -10,6 +10,7 @@ from diffusers import DDPMScheduler, RePaintPipeline
 from torch import optim
 from torch.nn import functional as F
 
+from ..model.guided_diffusion import dist_util
 from ..model.guided_diffusion.script_util import (
     args_to_dict,
     create_model_and_diffusion,
@@ -34,7 +35,7 @@ class RePaintDiffusion(pl.LightningModule):
         )
         self.scheduler = DDPMScheduler(**self.config["scheduler"])
 
-        self.model = UNetWrapper(model)
+        self.model = UNetWrapper(self.model)
 
         # Download pretrained model weights
         self.set_weights()
@@ -135,14 +136,17 @@ class RePaintDiffusion(pl.LightningModule):
         # Check if weights exist in the folder, if not - download
         check_pretrained_weights(**self.config["weights"])
         self.config["model_path"] = self.config["weights"]["save_dir"]
+        state_dict = dist_util.load_state_dict(
+            self.config["weights"]["save_dir"], map_location="cpu"
+        )
 
         # Set model weights
-        self.model.load_state_dict(torch.load(self.config["weights"]["save_dir"], map_location="cpu"))
+        self.model.load_state_dict(state_dict)
 
 
 class UNetWrapper(nn.Module):
     def __init__(self, unet):
-        super(UNetWrapper, self).__init__()
+        super(UNetWrapper).__init__()
         self.unet = unet
 
     def forward(self, x):
