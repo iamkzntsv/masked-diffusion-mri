@@ -122,7 +122,7 @@ class RePaintDiffusion(pl.LightningModule):
             self.model,
             (
                 model_config["num_samples"],
-                3,
+                1,
                 model_config["image_size"],
                 model_config["image_size"],
             ),
