@@ -152,8 +152,8 @@ class UNetWrapper(nn.Module):
         self.dtype = unet.dtype
 
     def forward(self, x, t):
-        # Create a stack of 3 grayscale images
-        x = torch.stack([x] * 3, dim=1)
+        # Create a stack of 3 greyscale images
+        x = torch.stack([x] * 3, dim=1).squeeze()
 
         # Run through the model layers
         x = self.unet(x, t)
