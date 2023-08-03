@@ -73,7 +73,7 @@ class RePaintDiffusion(pl.LightningModule):
         noise_pred = self.model(noisy_images, timesteps).to(clean_images.device)
 
         # Average over channels
-        noise_pred = torch.mean(noise_pred, dim=1, keepdim=True)
+        # noise_pred = torch.mean(noise_pred, dim=1, keepdim=True)
 
         return noise_pred, noise
 
