@@ -70,10 +70,9 @@ class RePaintDiffusion(pl.LightningModule):
         noisy_images = self.scheduler.add_noise(clean_images, noise, timesteps)
 
         # Predict the noise
-        model_output = self.model(noisy_images, timesteps).to(clean_images.device)
-        noise_mu, noise_var = torch.split(model_output, clean_images.shape[1], dim=1)
+        noise_pred = self.model(noisy_images, timesteps).to(clean_images.device)
 
-        return noise_mu, noise
+        return noise_pred, noise
 
     def _common_step(self, batch, batch_idx) -> torch.Tensor:
         # Calculate the loss
@@ -156,11 +155,12 @@ class UNetWrapper(nn.Module):
         x = torch.stack([x] * 3, dim=1).squeeze()
 
         # Run through the model layers
-        x = self.unet(x, t)
+        out = self.unet(x, t)
+        noise_mu, noise_var = torch.split(out, x.shape[1], dim=1)
 
         # Average over channels
-        x = torch.mean(x, dim=1, keepdim=True)
+        noise_mu = torch.mean(noise_mu, dim=1, keepdim=True)
 
-        return x
+        return noise_mu
 
 
