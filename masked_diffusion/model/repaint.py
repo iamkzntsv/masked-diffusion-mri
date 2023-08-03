@@ -161,4 +161,6 @@ class UNetWrapper(nn.Module):
         # Average over channels
         x = torch.mean(x, dim=1, keepdim=True)
 
+        return x
+
 
