@@ -153,13 +153,17 @@ class UNetWrapper(nn.Module):
     def forward(self, x, t):
         # Create a stack of 3 greyscale images
         x = torch.stack([x] * 3, dim=1).squeeze()
+        print(x.shape)
 
         # Run through the model layers
         out = self.unet(x, t)
+        print(out.shape)
         noise_mu, noise_var = torch.split(out, x.shape[1], dim=1)
+        print(noise_mu.shape, noise_var.shape)
 
         # Average over channels
         noise_mu = torch.mean(noise_mu, dim=1, keepdim=True)
+        print(noise_mu.shape)
 
         return noise_mu
 
