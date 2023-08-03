@@ -72,6 +72,9 @@ class RePaintDiffusion(pl.LightningModule):
         # Predict the noise
         noise_pred = self.model(noisy_images, timesteps).to(clean_images.device)
 
+        # Average over channels
+        noise_pred = torch.mean(noise_pred, dim=1, keepdim=True)
+
         return noise_pred, noise
 
     def _common_step(self, batch, batch_idx) -> torch.Tensor:
@@ -116,10 +119,10 @@ class RePaintDiffusion(pl.LightningModule):
             else self.diffusion.ddim_sample_loop
         )
         sample = sample_fn(
-            self.model.unet,
+            self.model,
             (
                 model_config["num_samples"],
-                1,
+                3,
                 model_config["image_size"],
                 model_config["image_size"],
             ),
@@ -153,17 +156,10 @@ class UNetWrapper(nn.Module):
     def forward(self, x, t):
         # Create a stack of 3 greyscale images
         x = torch.cat([x] * 3, dim=1)
-        print(x.shape)
 
         # Run through the model layers
         out = self.unet(x, t)
-        print(out.shape)
         noise_mu, noise_var = torch.split(out, x.shape[1], dim=1)
-        print(noise_mu.shape, noise_var.shape)
-
-        # Average over channels
-        noise_mu = torch.mean(noise_mu, dim=1, keepdim=True)
-        print(noise_mu.shape)
 
         return noise_mu
 
