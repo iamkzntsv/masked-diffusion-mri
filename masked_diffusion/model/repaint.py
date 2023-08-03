@@ -152,7 +152,7 @@ class UNetWrapper(nn.Module):
 
     def forward(self, x, t):
         # Create a stack of 3 greyscale images
-        x = torch.stack([x] * 3, dim=1).squeeze()
+        x = torch.cat([x] * 3, dim=1)
         print(x.shape)
 
         # Run through the model layers
