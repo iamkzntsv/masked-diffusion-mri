@@ -71,9 +71,7 @@ class RePaintDiffusion(pl.LightningModule):
 
         # Predict the noise
         noise_pred = self.model(noisy_images, timesteps).to(clean_images.device)
-
-        # Average over channels
-        # noise_pred = torch.mean(noise_pred, dim=1, keepdim=True)
+        noise_pred = torch.mean(noise_pred, dim=1)
 
         return noise_pred, noise
 
@@ -133,7 +131,7 @@ class RePaintDiffusion(pl.LightningModule):
 
         # Normalize to [0, 1] range
         sample = ((sample + 1) / 2).clamp(0, 1)
-        return  torch.mean(sample, dim=1, keepdim=True)
+        return torch.mean(sample, dim=1, keepdim=True)
 
     def set_weights(self) -> None:
         # Check if weights exist in the folder, if not - download
