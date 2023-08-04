@@ -69,9 +69,10 @@ class RePaintDiffusion(pl.LightningModule):
         noisy_images = self.scheduler.add_noise(clean_images, noise, timesteps)
 
         # Predict the noise
-        noise_pred = self.model(noisy_images, timesteps).to(clean_images.device)
+        model_output = self.model(noisy_images, timesteps).to(clean_images.device)
+        noise_mu, noise_var = torch.split(model_output, clean_images.shape[1], dim=1)
 
-        return noise_pred, noise
+        return noise_mu, noise
 
     def _common_step(self, batch, batch_idx) -> torch.Tensor:
         # Calculate the loss
