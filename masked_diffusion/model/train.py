@@ -34,7 +34,6 @@ def parse_args():
 
 
 def main(config):
-    set_seeds()
     wandb.init(project="masked-diffusion-mri", config=locals())
 
     config["device"] = device = get_device()

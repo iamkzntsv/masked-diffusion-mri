@@ -43,9 +43,6 @@ class RePaintDiffusion(pl.LightningModule):
         if self.config["model"]["use_fp16"]:
             self.model.convert_to_fp16()
 
-        # Add wrapper
-        self.model = UNetWrapper(self.model)
-
         # Create a pipeline
         self.pipe = RePaintPipeline(unet=self.model, scheduler=self.scheduler).to(config["device"])
         logger.info("RePaint pipeline created")
@@ -53,6 +50,8 @@ class RePaintDiffusion(pl.LightningModule):
     def forward(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
         # Get the clean images from the batch
         clean_images = batch["images"]
+        clean_images = torch.cat([clean_images] * 3, dim=1)
+
         bs = self.config["model"]["batch_size"]
 
         # Sample noise and add it to the images
@@ -71,7 +70,6 @@ class RePaintDiffusion(pl.LightningModule):
 
         # Predict the noise
         noise_pred = self.model(noisy_images, timesteps).to(clean_images.device)
-        noise_pred = torch.mean(noise_pred, dim=1)
 
         return noise_pred, noise
 
@@ -143,22 +141,3 @@ class RePaintDiffusion(pl.LightningModule):
 
         # Set model weights
         self.model.load_state_dict(state_dict)
-
-
-class UNetWrapper(nn.Module):
-    def __init__(self, unet):
-        super(UNetWrapper, self).__init__()
-        self.unet = unet
-        self.dtype = unet.dtype
-
-    def forward(self, x, t):
-        # Create a stack of 3 greyscale images
-        x = torch.cat([x] * 3, dim=1)
-
-        # Run through the model layers
-        out = self.unet(x, t)
-        noise_mu, noise_var = torch.split(out, x.shape[1], dim=1)
-
-        return noise_mu
-
-
