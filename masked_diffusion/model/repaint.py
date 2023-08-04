@@ -116,7 +116,7 @@ class RePaintDiffusion(pl.LightningModule):
             else self.diffusion.ddim_sample_loop
         )
         sample = sample_fn(
-            self.model.unet,
+            self.model,
             (
                 model_config["num_samples"],
                 3,
