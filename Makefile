@@ -18,10 +18,10 @@ create_environment:
 remove_environment:
 	conda env remove --prefix $(ENV_PATH)
 
-train: clean
+train:
 	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.train $(TRAIN_ARGS)
 
-infer: clean
+infer:
 	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.infer $(INFER_ARGS)
 
 clean: style

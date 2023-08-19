@@ -1,164 +1,73 @@
-import logging
-from typing import Any, Tuple
+# Copyright 2023 ETH Zurich Computer Vision Lab and The HuggingFace Team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-import pytorch_lightning as pl
+import numpy as np
 import torch
-import torch.nn as nn
-import torchvision.utils
-import wandb
-from diffusers import DDPMScheduler, RePaintPipeline
-from torch import optim
-from torch.nn import functional as F
+from tqdm import tqdm
 
-from ..model.guided_diffusion import dist_util
-from ..model.guided_diffusion.script_util import (
-    args_to_dict,
-    create_model_and_diffusion,
-    model_and_diffusion_defaults,
-)
-from ..utils import check_pretrained_weights, count_parameters
+import wandb
+import logging
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class RePaintDiffusion(pl.LightningModule):
-    def __init__(self, config) -> None:
+class RePaintPipeline:
+    def __init__(self, unet, scheduler):
         super().__init__()
 
-        self.config = config
-
-        # Initialize UNet and DDPM scheduler
-        config["model"].update(model_and_diffusion_defaults())
-        self.model, self.diffusion = create_model_and_diffusion(
-            **args_to_dict(config["model"], model_and_diffusion_defaults())
-        )
-        self.scheduler = DDPMScheduler(**self.config["scheduler"])
-
-        # Download pretrained model weights
-        self.set_weights()
-        logger.info("Model initialized with pretrained weights")
-
-        # Set precision
-        if self.config["model"]["use_fp16"]:
-            self.model.convert_to_fp16()
-
-        # Add wrapper
-        self.model = UNetWrapper(self.model)
-
-        # Create a pipeline
-        self.pipe = RePaintPipeline(unet=self.model, scheduler=self.scheduler).to(config["device"])
-        logger.info("RePaint pipeline created")
-
-    def forward(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
-        # Get the clean images from the batch
-        clean_images = batch["images"]
-        bs = self.config["model"]["batch_size"]
-
-        # Sample noise and add it to the images
-        noise = torch.randn(clean_images.shape).to(clean_images.device)
-
-        # Get a timestep for each image in a batch
-        timesteps = torch.randint(
-            0,
-            self.scheduler.config.num_train_timesteps,
-            (bs,),
-            device=clean_images.device,
-        ).long()
-
-        # Forward diffusion process
-        noisy_images = self.scheduler.add_noise(clean_images, noise, timesteps)
-
-        # Predict the noise
-        noise_pred = self.model(noisy_images, timesteps).to(clean_images.device)
-        noise_pred = torch.mean(noise_pred, dim=1)
-
-        return noise_pred, noise
-
-    def _common_step(self, batch, batch_idx) -> torch.Tensor:
-        # Calculate the loss
-        noise_pred, noise = self.forward(batch)
-        loss = F.mse_loss(noise_pred, noise)
-        return loss
-
-    def training_step(self, batch, batch_idx) -> torch.Tensor:
-        loss = self._common_step(batch, batch_idx)
-        self.log("train_loss", loss, on_step=False, on_epoch=True)
-        return loss
-
-    def validation_step(self, batch, batch_idx) -> torch.Tensor:
-        loss = self._common_step(batch, batch_idx)
-        self.log("valid_loss", loss, on_step=False, on_epoch=True)
-        return loss
-
-    def on_validation_epoch_end(self) -> None:
-        # Generate a sample from the model
-        sample_np = self.sample()
-
-        # Create a grid and log to wandb
-        grid = torchvision.utils.make_grid(sample_np, nrow=4)
-        wandb.log({"image_grid": wandb.Image(grid.permute(1, 2, 0).cpu().numpy())})
-
-        logger.info("Sampling complete")
-
-    def configure_optimizers(self) -> Any:
-        optimizer = optim.Adam(self.parameters(), lr=self.config["model"]["lr"])
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=0)
-        return [optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
-
-    def sample(self) -> torch.Tensor:
-        model_config = self.config["model"]
-        self.model.eval()
-
-        logger.info("Sampling...")
-        sample_fn = (
-            self.diffusion.p_sample_loop
-            if not model_config["use_ddim"]
-            else self.diffusion.ddim_sample_loop
-        )
-        sample = sample_fn(
-            self.model.unet,
-            (
-                model_config["num_samples"],
-                3,
-                model_config["image_size"],
-                model_config["image_size"],
-            ),
-            clip_denoised=model_config["clip_denoised"],
-            progress=True,
-            model_kwargs={},
-        )
-
-        # Normalize to [0, 1] range
-        sample = ((sample + 1) / 2).clamp(0, 1)
-        return torch.mean(sample, dim=1, keepdim=True)
-
-    def set_weights(self) -> None:
-        # Check if weights exist in the folder, if not - download
-        check_pretrained_weights(**self.config["weights"])
-        self.config["model_path"] = self.config["weights"]["save_dir"]
-        state_dict = dist_util.load_state_dict(
-            self.config["weights"]["save_dir"], map_location="cpu"
-        )
-
-        # Set model weights
-        self.model.load_state_dict(state_dict)
-
-
-class UNetWrapper(nn.Module):
-    def __init__(self, unet):
-        super(UNetWrapper, self).__init__()
         self.unet = unet
-        self.dtype = unet.dtype
+        self.scheduler = scheduler
 
-    def forward(self, x, t):
-        # Create a stack of 3 greyscale images
-        x = torch.cat([x] * 3, dim=1)
+    @torch.no_grad()
+    def __call__(self, image, mask_image, num_inference_steps, jump_length, jump_n_sample, device):
+        self.num_inference_steps = num_inference_steps
+        self.mask_image = mask_image
+        self.jump_length = jump_length
+        self.jump_n_sample = jump_n_sample
+        self.device = device
 
-        # Run through the model layers
-        out = self.unet(x, t)
-        noise_mu, noise_var = torch.split(out, x.shape[1], dim=1)
+        original_image = image.to(device=self.device)
+        mask_image = mask_image.to(device=self.device)
 
-        return noise_mu
+        image = torch.randn(image.shape, device=self.device)
 
+        self.scheduler.set_timesteps(
+            self.num_inference_steps, self.jump_length, self.jump_n_sample, self.device
+        )
 
+        self.unet.expand_dims = True
+
+        logger.info("Inpainting...")
+        t_last = self.scheduler.timesteps[0] + 1
+        for i, t in tqdm(enumerate(self.scheduler.timesteps), total=len(self.scheduler.timesteps)):
+            if t < t_last:
+                # predict the noise residual
+                model_output = self.unet(image, t.unsqueeze(0))
+                self.unet.expand_dims = False
+
+                # compute previous image: x_t -> x_t-1
+                image = self.scheduler.step(
+                    model_output, t.squeeze(), image, original_image, mask_image
+                ).prev_sample
+
+            else:
+                # compute the reverse: x_t-1 -> x_t
+                image = self.scheduler.undo_step(image, t_last.squeeze())
+            t_last = t
+
+        image = torch.mean(image, dim=1, keepdim=True)
+
+        return image

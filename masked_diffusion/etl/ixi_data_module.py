@@ -2,7 +2,9 @@ import logging
 import os
 from typing import Any, Dict
 
+import numpy as np
 import pytorch_lightning as pl
+import torch
 from datasets import Dataset, load_from_disk
 from lightning.pytorch.utilities.types import (
     EVAL_DATALOADERS,
@@ -10,10 +12,8 @@ from lightning.pytorch.utilities.types import (
 )
 from torch.utils.data import DataLoader
 from torchvision import transforms
-import torch
-import numpy as np
 
-from .data_utils import download_and_save_dataset
+from .data_utils import download_and_save_dataset, image_transform
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -35,13 +35,7 @@ class IXIDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.image_size = image_size
         self.num_workers = num_workers
-        self.transform = transforms.Compose(
-            [
-                transforms.Resize((image_size, image_size)),
-                transforms.ToTensor(),
-                transforms.Normalize(0.5, 0.5),
-            ]
-        )
+        self.transform = image_transform(image_size)
         self.dims = None
 
     def prepare_data(self) -> None:

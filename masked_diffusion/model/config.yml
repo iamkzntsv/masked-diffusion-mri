@@ -16,7 +16,7 @@ scheduler:
   beta_schedule: linear
 weights:
   url: https://openaipublic.blob.core.windows.net/diffusion/jul-2021/256x256_diffusion_uncond.pt
-  save_dir: masked_diffusion/model/pretrained/weights_pretrained.pt
+  save_dir: masked_diffusion/model/pretrained/model.pt
 trainer:
   devices: 1
   max_epochs: 10
@@ -26,3 +26,4 @@ logging:
   project: masked-diffusion-mri
   log_model: true
 device: cpu
+save_path: '/Users/iamkzntsv/Desktop'

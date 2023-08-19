@@ -2,13 +2,15 @@ import argparse
 import logging
 import os
 
+import numpy
 import torch
-import wandb
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 
-from ..etl.ixi_dataset import IXIDataModule
-from ..model.repaint import RePaintDiffusion
+import wandb
+
+from ..etl.ixi_data_module import IXIDataModule
+from ..model.model import DiffusionModel
 from ..utils import get_device, load_yaml_config, set_seeds, update_config
 
 logger = logging.getLogger(__name__)
@@ -44,8 +46,7 @@ def main(config):
     data = IXIDataModule(**config["data"]["ixi"], **config["model"])
 
     # Initialize RePaint model, Trainer and WandbLogger
-    repaint = RePaintDiffusion(config)
-    repaint.to(device)
+    repaint = DiffusionModel(config)
 
     wandb_logger = WandbLogger(**config["logging"])
     trainer = Trainer(accelerator=device, logger=wandb_logger, **config["trainer"])
@@ -55,7 +56,7 @@ def main(config):
     trainer.fit(repaint, data)
     logger.info("✅ Training complete!")
 
-    torch.save(repaint.model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
+    torch.save(repaint.unet.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 
 if __name__ == "__main__":

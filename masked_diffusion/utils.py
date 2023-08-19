@@ -1,9 +1,7 @@
 import os
 import random
 
-import nibabel as nib
 import numpy as np
-import requests
 import torch
 import yaml
 
@@ -17,15 +15,6 @@ def set_seeds(seed=42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # multi-GPU
-
-
-def load_all_mri(dir_path):
-    return {filename: load_mri(os.path.join(dir_path, filename + ".mgz")) for filename in FILENAMES}
-
-
-def load_mri(path):
-    image = nib.load(path)
-    return image
 
 
 def get_device():
@@ -49,23 +38,6 @@ def load_yaml_config(file_path):
         config = yaml.safe_load(config_file)
 
     return config
-
-
-def check_pretrained_weights(url, save_dir):
-    # If already exists - do not download again
-    if os.path.exists(save_dir):
-        print(f"Pretrained weights found at {save_dir}. Skipping download.")
-        return
-    else:
-        print("Downloading pretrained weights...")
-        download_weights(url, save_dir)
-
-
-def download_weights(url, save_dir):
-    response = requests.get(url)
-    response.raise_for_status()  # raise an exception if the request failed
-    with open(save_dir, "wb") as f:
-        f.write(response.content)
 
 
 def update_config(config, args_dict):

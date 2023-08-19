@@ -1,8 +1,10 @@
 import os
 
-import cv2
+import nibabel as nib
 import numpy as np
 from datasets import load_dataset
+
+FILENAMES = ["t1", "mask"]
 
 
 def download_and_save_dataset(path, save_dir) -> None:
@@ -13,6 +15,22 @@ def download_and_save_dataset(path, save_dir) -> None:
     dataset.save_to_disk(save_dir)
 
 
-def get_reference_image(dataset):
-    """Reference for histogram matching"""
-    return np.array(dataset[42]["image"])
+def np_to_nifti(arr, affine):
+    if affine is None:
+        affine = np.eye(4)
+
+    if arr.ndim not in (3, 4):
+        raise ValueError("Input array must be 3D or 4D.")
+
+    nifti_img = nib.Nifti1Image(arr, affine)
+
+    return nifti_img
+
+
+def load_all_mri(dir_path):
+    return {filename: load_mri(os.path.join(dir_path, filename + ".mgz")) for filename in FILENAMES}
+
+
+def load_mri(path):
+    image = nib.load(path)
+    return image
