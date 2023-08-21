@@ -35,7 +35,10 @@ def parse_args():
     return parser.parse_args()
 
 
-def main(config):
+def main():
+    args = parse_args()
+    config = update_config(load_yaml_config("masked_diffusion/model/config.yml"), vars(args))
+
     set_seeds()
     wandb.init(project="masked-diffusion-mri", config=locals())
 
@@ -60,6 +63,4 @@ def main(config):
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    config = update_config(load_yaml_config("masked_diffusion/model/config.yml"), vars(args))
-    main(config)
+    main()

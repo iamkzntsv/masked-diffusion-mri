@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 
+import numpy as np
 import nibabel as nib
 import torch
 from datasets import load_from_disk
@@ -18,7 +19,7 @@ from ..etl.image_utils import (
 )
 from ..model.model import DiffusionModel
 from ..model.repaint import RePaintPipeline
-from ..utils import dir_path, get_device, load_yaml_config
+from ..utils import dir_path, get_device, load_yaml_config, update_config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -27,10 +28,17 @@ logger.setLevel(logging.INFO)
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", type=dir_path, help="Path to a nifti image")
+    parser.add_argument("--batch_size", type=int, help="Batch size")
+    parser.add_argument("--num_inference_steps", type=int, help="Num inference steps")
+    parser.add_argument("--jump_length", type=int, help="Jump Length")
+    parser.add_argument("--jump_n_sample", type=int, help="Resampling rate")
     return parser.parse_args()
 
 
-def main(config):
+def main():
+    args = parse_args()
+    config = update_config(load_yaml_config("masked_diffusion/model/config.yml"), vars(args))
+
     # Get IXI dataset
     download_and_save_dataset(**config["data"]["ixi"])
     ref_dataset = load_from_disk(os.path.join("data/ixi/transformed", "train"))
@@ -42,7 +50,7 @@ def main(config):
     dataset = CustomDataset(args.path, hist_ref, transform=transform)
     dataloader = DataLoader(
         dataset,
-        batch_size=1,
+        batch_size=args.batch_size,
         shuffle=False,
         drop_last=False,
     )
@@ -64,16 +72,15 @@ def main(config):
             inpainted_image = pipe(
                 image,
                 mask,
-                num_inference_steps=250,
-                jump_length=10,
-                jump_n_sample=10,
+                **config["repaint"],
                 device=device,
             )
         else:
-            logger.info("No tumour found. Skipping.")
+            logger.info("No tumour mask found. Skipping.")
 
         inpainted_image = reverse_transform(inpainted_image)
-        inpainted_images.append(inpainted_image)
+        inpainted_image = np.split(inpainted_image, args.batch_size, axis=0)
+        inpainted_images.extend(inpainted_image)
 
     volume = dataset.slice_ext.combine_slices(inpainted_images)
     affine = dataset.slice_ext.affine
@@ -85,6 +92,4 @@ def main(config):
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    config = load_yaml_config("masked_diffusion/model/config.yml")
-    main(config)
+    main()
