@@ -28,7 +28,7 @@ def get_transform(image_size):
     transform_state = TransformState()
     return {
         "image": image_transform(image_size, transform_state),
-        "mask": mask_transform(image_size),
+        "mask": mask_transform(image_size, transform_state),
     }, transform_state
 
 
@@ -47,11 +47,12 @@ def image_transform(image_size, transform_state):
     )
 
 
-def mask_transform(image_size):
+def mask_transform(image_size, transform_state):
     return T.Compose(
         [
-            T.Resize((image_size, image_size), interpolation=T.InterpolationMode("nearest")),
             T.ToTensor(),
+            CenterCropWithOffset(transform_state),
+            T.Resize((image_size, image_size), interpolation=T.InterpolationMode("nearest")),
             InvertMask(),
         ]
     )

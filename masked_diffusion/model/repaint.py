@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+
 import numpy as np
 import torch
 from tqdm import tqdm
-
-import wandb
-import logging
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
