@@ -2,11 +2,10 @@ import argparse
 import logging
 import os
 
-import numpy as np
 import nibabel as nib
+import numpy as np
 import torch
 from datasets import load_from_disk
-from diffusers import RePaintScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -18,11 +17,14 @@ from ..etl.image_utils import (
     get_transform,
 )
 from ..model.model import DiffusionModel
-from ..model.repaint import RePaintPipeline
+from ..model.repaint import RePaintPipeline, RePaintScheduler
 from ..utils import dir_path, get_device, load_yaml_config, update_config
+from diffusers import RePaintScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+import wandb
 
 
 def parse_args():
@@ -38,6 +40,8 @@ def parse_args():
 def main():
     args = parse_args()
     config = update_config(load_yaml_config("masked_diffusion/model/config.yml"), vars(args))
+
+    wandb.init(project="masked-diffusion-mri", config=locals())
 
     # Get IXI dataset
     download_and_save_dataset(**config["data"]["ixi"])
@@ -55,8 +59,9 @@ def main():
         drop_last=False,
     )
 
-    scheduler = RePaintScheduler.from_pretrained("google/ddpm-ema-celebahq-256")
+    scheduler = RePaintScheduler()
     diffusion = DiffusionModel(config).to(device)
+    scheduler = RePaintScheduler.from_pretrained("google/ddpm-ema-celebahq-256")
     pipe = RePaintPipeline(unet=diffusion.unet, scheduler=scheduler)
 
     original_shape = dataset.slice_ext.original_shape[0]
@@ -64,23 +69,30 @@ def main():
 
     inpainted_images = []
     for i, (image, mask) in tqdm(enumerate(dataloader), total=len(dataloader)):
-        logger.info(f"Slice {i + 1}")
-        inpainted_image = image
 
-        mask_sum = torch.sum(mask != 1)  # invert before summation
-        if mask_sum > 0:  # only inpaint if there is any tumour tissue
-            inpainted_image = pipe(
-                image,
-                mask,
-                **config["repaint"],
-                device=device,
-            )
-        else:
-            logger.info("No tumour mask found. Skipping.")
+        if i == 135:
+            logger.info(f"Slice {i + 1}")
+            inpainted_image = image
 
-        inpainted_image = reverse_transform(inpainted_image)
-        inpainted_image = np.split(inpainted_image, args.batch_size, axis=0)
-        inpainted_images.extend(inpainted_image)
+            mask_sum = torch.sum(mask != 1)  # invert before summation
+            if mask_sum > 0:  # only inpaint if there is any tumour tissue
+                inpainted_image = pipe(
+                    image,
+                    mask,
+                    **config["repaint"],
+                    device=device,
+                )
+            else:
+                logger.info("No tumour mask found. Skipping.")
+
+            inpainted_image = reverse_transform(inpainted_image)
+            inpainted_image = np.split(inpainted_image, args.batch_size, axis=0)
+            inpainted_images.extend(inpainted_image)
+
+            from PIL import Image
+
+            wandb.log({"image_grid": wandb.Image(inpainted_image[0])})
+            return
 
     volume = dataset.slice_ext.combine_slices(inpainted_images)
     affine = dataset.slice_ext.affine

@@ -68,7 +68,6 @@ class DiffusionModel(pl.LightningModule):
 
         # Predict the noise
         noise_pred = self.unet(noisy_images, timesteps).to(clean_images.device)
-        noise_pred = torch.mean(noise_pred, dim=1)
 
         return noise_pred, noise
 
@@ -126,9 +125,7 @@ class DiffusionModel(pl.LightningModule):
             model_kwargs={},
         )
 
-        # Normalize to [0, 1] range
-        sample = ((sample + 1) / 2).clamp(0, 1)
-        return torch.mean(sample, dim=1, keepdim=True)
+        return sample
 
     def set_weights(self) -> None:
         # Check if weights exist in the folder, if not - download
@@ -143,19 +140,18 @@ class DiffusionModel(pl.LightningModule):
 
 
 class UNetWrapper(nn.Module):
-    def __init__(self, unet, expand_dims=True):
+    def __init__(self, unet):
         super(UNetWrapper, self).__init__()
         self.unet = unet
         self.dtype = unet.dtype
-        self.expand_dims = expand_dims
 
     def forward(self, x, t):
-        # Create a stack of 3 greyscale images
-        if self.expand_dims:
-            x = torch.cat([x] * 3, dim=1)
+        # Create a stack of 3 grayscale images
+        x = torch.cat([x] * 3, dim=1)
 
         # Run through the model layers
         out = self.unet(x, t)
         noise_mu, noise_var = torch.split(out, x.shape[1], dim=1)
+        noise_mu = torch.mean(noise_mu, dim=1, keepdim=True)
 
         return noise_mu

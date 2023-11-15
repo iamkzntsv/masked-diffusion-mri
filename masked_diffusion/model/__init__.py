@@ -5,4 +5,4 @@ import logging
 
 logging.getLogger("numexpr").setLevel(logging.ERROR)
 
-__all__ = ["train", "sample.py"]
+__all__ = ["train", "infer", "model", "model_utils", "repaint"]

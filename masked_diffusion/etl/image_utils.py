@@ -36,7 +36,7 @@ def get_reverse_transform(original_size, transform_state):
     return {"image": reverse_image_transform(original_size, transform_state), "mask": None}
 
 
-def image_transform(image_size, transform_state):
+def image_transform(image_size, transform_state, crop=True):
     return T.Compose(
         [
             T.ToTensor(),
@@ -144,6 +144,5 @@ class Denormalize:
 
 class ToNumpy:
     def __call__(self, image_tensor):
-        image_tensor = torch.mean(image_tensor, dim=1, keepdim=True)
         image = image_tensor.permute(0, 2, 3, 1).squeeze().cpu().numpy()
         return image
