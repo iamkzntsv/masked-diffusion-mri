@@ -2,6 +2,7 @@ import os
 
 import nibabel as nib
 import numpy as np
+from PIL import Image
 from datasets import load_dataset
 
 FILENAMES = ["t1", "mask"]
@@ -25,6 +26,22 @@ def np_to_nifti(arr, affine):
     nifti_img = nib.Nifti1Image(arr, affine)
 
     return nifti_img
+
+
+def is_nifti(dir_path):
+    if os.path.isdir(dir_path):
+        nifti_files = [f for f in os.listdir(dir_path) if f.endswith(".nii")
+                       or f.endswith(".nii.gz")
+                       or f.endswith(".mgz")]
+        return len(nifti_files) > 0
+    return False
+
+
+def determine_file_type(file_path):
+    if is_nifti(file_path):
+        return "nifti"
+    else:
+        return "unknown"
 
 
 def load_all_mri(dir_path):

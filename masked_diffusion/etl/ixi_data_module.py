@@ -15,6 +15,8 @@ from torchvision import transforms as T
 
 from .data_utils import download_and_save_dataset
 
+from .image_utils import image_transform
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 

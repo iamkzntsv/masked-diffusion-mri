@@ -47,6 +47,7 @@ class SliceExtractor:
             if self.hist_ref is not None:
                 img = match_image_histogram(img, self.hist_ref)
 
+
             img_slices.append(img)
             mask_slices.append(mask)
 
