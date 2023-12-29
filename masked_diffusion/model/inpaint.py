@@ -84,6 +84,8 @@ def inpaint(args):
 
     inpainted_images = []
     for i, (image, mask) in tqdm(enumerate(dataloader), total=len(dataloader)):
+        logger.info(f"Slice {i + 1}")
+        inpainted_image = image
 
         mask[mask > 0] = 1
         mask_sum = torch.sum(mask != 1)  # invert mask before summation
@@ -98,25 +100,9 @@ def inpaint(args):
         else:
             logger.info("No tumour mask found. Skipping.")
 
-            mask_sum = torch.sum(mask != 1)  # invert before summation
-            if mask_sum > 0:  # only inpaint if there is any tumour tissue
-                inpainted_image = pipe(
-                    image,
-                    mask,
-                    **config["repaint"],
-                    device=device,
-                )
-            else:
-                logger.info("No tumour mask found. Skipping.")
-
-            inpainted_image = reverse_transform(inpainted_image)
-            inpainted_image = np.split(inpainted_image, args.batch_size, axis=0)
-            inpainted_images.extend(inpainted_image)
-
-            from PIL import Image
-
-            wandb.log({"image_grid": wandb.Image(inpainted_image[0])})
-            return
+        inpainted_image = reverse_transform(inpainted_image)
+        inpainted_image = np.split(inpainted_image, args.batch_size, axis=0)
+        inpainted_images.extend(inpainted_image)
 
         # wandb.log({"image_grid": wandb.Image(inpainted_image[0])})
 
