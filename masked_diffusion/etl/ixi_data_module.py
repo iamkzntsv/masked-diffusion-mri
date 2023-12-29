@@ -13,7 +13,8 @@ from lightning.pytorch.utilities.types import (
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from .data_utils import download_and_save_dataset, image_transform
+from .data_utils import download_and_save_dataset
+from .image_utils import image_transform
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

@@ -4,10 +4,11 @@ SHELL = /bin/bash
 ENV_PATH=~/miniconda3/envs/masked-diffusion-mri
 
 # Args
+PREPROCESS_ARGS=
 TRAIN_ARGS=
-INFER_ARGS=
+INPAINT_ARGS=
 
-.PHONY: create_environment get_data train clean sample
+.PHONY: create_environment remove_environment preprocess_mri train inpaint clean sample
 
 # Default rule
 all: create_environment train
@@ -18,11 +19,14 @@ create_environment:
 remove_environment:
 	conda env remove --prefix $(ENV_PATH)
 
+preprocess_mri:
+	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.etl.preprocess_mri $(PREPROCESS_ARGS)
+
 train:
 	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.train $(TRAIN_ARGS)
 
-infer:
-	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.infer $(INFER_ARGS)
+inpaint:
+	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.inpaint $(INPAINT_ARGS)
 
 clean: style
 	find . -type f -name "*.py[co]" -delete
@@ -38,4 +42,6 @@ help:
 	@echo "Commands":
 	@echo: "create_environment		: creates conda environment"
 	@echo: "remove_environment		: deletes conda environment"
-	@echo: "train					: run the training loop"
+	@echo: "train					: applies necessary transformations to mri volume"
+	@echo: "train					: runs the training loop"
+	@echo: "inpaint					: runs the inpainting"

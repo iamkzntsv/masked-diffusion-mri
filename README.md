@@ -10,21 +10,36 @@
 │   ├── interim                 # Interim data
 │   ├── raw                     # Raw data
 │   └── transformed             # Processed data
-├── masked_diffusion            # TO DO
+├── masked_diffusion            # Project working files
 │   ├── etl                     # Scripts for extracting, transforming, and loading data
 │       ├── __init__.py
-│       ├── get_data.py         # Script to get training data from HuggingFace hub
-│       ├── transform_brats.py  # Script to transform raw BRATS data to processed data
-│       ├── ixi_dataset.py      # IXI dataset script
-│       ├── brats_dataset.py    # BRATS dataset script
-│       └── brats_dataloader.py # BRATS dataloader script
+│       ├── custom_dataset.py   # Data processing script
+│       ├── data_utils.py       # Data utility functions
+│       ├── image_utils.py      # Image utility functions
+│       ├── ixi_data_module.py  # Training dataset loading script
+│       ├── preprocess_mri.py   # MRI preprocessing script
+│       └── slice_extractor.py  # MRI slice extraction script
 │   ├── model                   # Scripts for model training and evaluation
 │       ├── __init__.py
 │       ├── train.py            # Training script
-│       ├── infer.py            # Inference script
-│       ├── repaint.py          # RePaint model script
+│       ├── model.py            # Diffusion model implementation script
+│       ├── inpaint.py          # Inference script
+│       ├── repaint.py          # RePaint algorithm script
 │       └── config.yml          # Configuration file
 │   ├── __init__.py    
 │   └── utils.py                # Utility functions       
 └── notebooks                   # Jupyter notebooks for exploration and presentation
+```
+
+## MRI Preprocessing
+Prior to applying our trained model to your MRI data, it's crucial to undergo specific preprocessing steps. 
+Note: Before running the script make sure to perform skull-stripping and registration using FreeSurfer or a similar MRI processing tool (following [this](https://github.com/iamkzntsv/self-supervised-learning-mri/blob/master/preprocessing.md]) procedure).
+
+```
+make preprocess_mri PREPROCESS_ARGS="--path /your_subj_path --save_dir /your_save_dir --batch_size 1 --offset 15"
+```
+## Tumour Inpainting
+To perform MRI image inpainting run the following command on a `.mgz` MRI file obtained from MRI preprocessing step.
+```
+make inpaint INPAINT_ARGS="--path /mri_path --batch_size 1 --num_inference_steps 250 --jump_length 10 --jump_n_sample 10"
 ```

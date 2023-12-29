@@ -8,14 +8,14 @@ import torch
 from datasets import load_from_disk
 from diffusers import RePaintScheduler
 from torch.utils.data import DataLoader
+import torchvision.transforms as T
 from tqdm import tqdm
 
 from ..etl.custom_dataset import CustomDataset
-from ..etl.data_utils import download_and_save_dataset, np_to_nifti
+from ..etl.data_utils import determine_file_type, download_and_save_dataset, np_to_nifti
 from ..etl.image_utils import (
     get_reference_image,
     get_reverse_transform,
-    get_transform,
 )
 from ..model.model import DiffusionModel
 from ..model.repaint import RePaintPipeline
@@ -23,6 +23,8 @@ from ..utils import dir_path, get_device, load_yaml_config, update_config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+import wandb
 
 
 def parse_args():
@@ -37,6 +39,18 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    input_file_type = determine_file_type(args.path)
+
+    # wandb.init(project="masked-diffusion-mri", config=locals())
+
+    if input_file_type == "nifti":
+        inpaint(args)
+    else:
+        logger.info("Unknown file type.")
+
+
+def inpaint(args):
     config = update_config(load_yaml_config("masked_diffusion/model/config.yml"), vars(args))
 
     # Get IXI dataset
@@ -46,8 +60,12 @@ def main():
 
     config["device"] = device = get_device()
 
-    transform, transform_state = get_transform(config["model"]["image_size"])
-    dataset = CustomDataset(args.path, hist_ref, transform=transform)
+    dataset = CustomDataset(
+        args.path,
+        hist_ref,
+        image_transform=T.Compose([T.ToTensor(), T.Normalize(0.5, 0.5)]),
+        mask_transform=T.ToTensor())
+
     dataloader = DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -59,15 +77,16 @@ def main():
     diffusion = DiffusionModel(config).to(device)
     pipe = RePaintPipeline(unet=diffusion.unet, scheduler=scheduler)
 
-    original_shape = dataset.slice_ext.original_shape[0]
-    reverse_transform = get_reverse_transform(original_shape, transform_state)["image"]
+    reverse_transform = get_reverse_transform()["image"]
 
     inpainted_images = []
     for i, (image, mask) in tqdm(enumerate(dataloader), total=len(dataloader)):
         logger.info(f"Slice {i + 1}")
         inpainted_image = image
 
-        mask_sum = torch.sum(mask != 1)  # invert before summation
+        mask[mask > 0] = 1
+        mask_sum = torch.sum(mask != 1)  # invert mask before summation
+
         if mask_sum > 0:  # only inpaint if there is any tumour tissue
             inpainted_image = pipe(
                 image,
@@ -82,11 +101,13 @@ def main():
         inpainted_image = np.split(inpainted_image, args.batch_size, axis=0)
         inpainted_images.extend(inpainted_image)
 
+        # wandb.log({"image_grid": wandb.Image(inpainted_image[0])})
+
     volume = dataset.slice_ext.combine_slices(inpainted_images)
     affine = dataset.slice_ext.affine
 
     nifti_image = np_to_nifti(volume, affine)
-    save_path = os.path.join(config["save_path"], "inpainted.nii.gz")
+    save_path = "inpainted.nii.gz"
     nib.save(nifti_image, save_path)
     logger.info(f"Inpainted volume saved at: {save_path}")
 
