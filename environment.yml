@@ -2,6 +2,7 @@ name: masked-diffusion-mri
 channels:
   - conda-forge
 dependencies:
+  - python=3.10.9
   - numpy
   - pandas
   - matplotlib

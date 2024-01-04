@@ -15,7 +15,7 @@ scheduler:
   beta_start : 0.0001
   beta_schedule: linear
 weights:
-  url: https://openaipublic.blob.core.windows.net/diffusion/jul-2021/256x256_diffusion_uncond.pt
+  url: https://drive.google.com/uc?export=download&id=18dmQbZiqBKh6ilC0HsXxM8ikHWDyyUJs
   save_dir: masked_diffusion/model/pretrained/model.pt
 trainer:
   devices: 1

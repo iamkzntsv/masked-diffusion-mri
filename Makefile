@@ -3,30 +3,37 @@ SHELL = /bin/bash
 # Default path to Conda environment
 ENV_PATH=~/miniconda3/envs/masked-diffusion-mri
 
+# Docker image
+DOCKER_TAG=masked-diffusion-mri:latest
+
 # Args
 PREPROCESS_ARGS=
 TRAIN_ARGS=
 INPAINT_ARGS=
 
-.PHONY: create_environment remove_environment preprocess_mri train inpaint clean sample
+.PHONY: build create_env remove_env preprocess_mri train inpaint clean sample
 
 # Default rule
-all: create_environment train
+all: build train
 
-create_environment:
+build:
+	docker build --no-cache . -f Dockerfile -t $(DOCKER_TAG)
+
+create_env:
 	conda info --envs | grep $(ENV_PATH) > /dev/null || conda env create -f environment.yml --prefix $(ENV_PATH)
 
-remove_environment:
+remove_env:
 	conda env remove --prefix $(ENV_PATH)
 
+
 preprocess_mri:
-	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.etl.preprocess_mri $(PREPROCESS_ARGS)
+	docker run $(DOCKER_TAG) conda run --no-capture-output -n masked-diffusion-mri python -u -m masked_diffusion.etl.preprocess_mri $(PREPROCESS_ARGS)
 
 train:
-	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.train $(TRAIN_ARGS)
+	docker run $(DOCKER_TAG) conda run --no-capture-output -n masked-diffusion-mri python -u -m masked_diffusion.model.train $(TRAIN_ARGS)
 
 inpaint:
-	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.inpaint $(INPAINT_ARGS)
+	docker run $(DOCKER_TAG) conda run --no-capture-output -n masked-diffusion-mri python -u -m masked_diffusion.model.inpaint $(INPAINT_ARGS)
 
 clean: style
 	find . -type f -name "*.py[co]" -delete
@@ -40,8 +47,9 @@ style:
 
 help:
 	@echo "Commands":
-	@echo: "create_environment		: creates conda environment"
-	@echo: "remove_environment		: deletes conda environment"
-	@echo: "train					: applies necessary transformations to mri volume"
+	@echo: "build					: builds docker image"
+	@echo: "create_env				: creates conda environment"
+	@echo: "remove_env				: deletes conda environment"
+	@echo: "preprocess				: applies necessary transformations to mri volume"
 	@echo: "train					: runs the training loop"
 	@echo: "inpaint					: runs the inpainting"

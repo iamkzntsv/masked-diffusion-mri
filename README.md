@@ -31,6 +31,9 @@
 └── notebooks                   # Jupyter notebooks for exploration and presentation
 ```
 
+## Download Pre-trained Model
+The model parameters can be downloaded from (here)[]. Please put them into `masked_diffusion/model/pretrained`.
+
 ## MRI Preprocessing
 Prior to applying our trained model to your MRI data, it's crucial to undergo specific preprocessing steps. 
 Note: Before running the script make sure to perform skull-stripping and registration using FreeSurfer or a similar MRI processing tool (following [this](https://github.com/iamkzntsv/self-supervised-learning-mri/blob/master/preprocessing.md]) procedure).
