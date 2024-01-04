@@ -32,7 +32,7 @@
 ```
 
 ## Download Pre-trained Model
-The model parameters can be downloaded from (here)[]. Please put them into `masked_diffusion/model/pretrained`.
+The model parameters can be downloaded from [here](https://drive.google.com/uc?export=download&id=18dmQbZiqBKh6ilC0HsXxM8ikHWDyyUJs). Please put them into `masked_diffusion/model/pretrained`.
 
 ## MRI Preprocessing
 Prior to applying our trained model to your MRI data, it's crucial to undergo specific preprocessing steps. 
