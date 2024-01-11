@@ -10,21 +10,27 @@
 │   ├── interim                 # Interim data
 │   ├── raw                     # Raw data
 │   └── transformed             # Processed data
-├── masked_diffusion            # TO DO
+├── masked_diffusion            # Project working files
 │   ├── etl                     # Scripts for extracting, transforming, and loading data
 │       ├── __init__.py
-│       ├── get_data.py         # Script to get training data from HuggingFace hub
-│       ├── transform_brats.py  # Script to transform raw BRATS data to processed data
-│       ├── ixi_dataset.py      # IXI dataset script
-│       ├── brats_dataset.py    # BRATS dataset script
-│       └── brats_dataloader.py # BRATS dataloader script
+│       ├── custom_dataset.py   # Script to get training data from HuggingFace hub
+│       ├── data_utils.py       # Script to transform raw BRATS data to processed data
+│       ├── image_utils.py      # IXI dataset script
+│       ├── ixi_data_module.py  # Training dataset script
+│       ├── preprocess_mri.py   # MRI preprocessing script
+│       └── slice_extractor.py  # MRI slice extraction script
 │   ├── model                   # Scripts for model training and evaluation
 │       ├── __init__.py
 │       ├── train.py            # Training script
-│       ├── infer.py            # Inference script
-│       ├── repaint.py          # RePaint model script
+│       ├── model.py            # Diffusion model script
+│       ├── inpaint.py          # Inference script
+│       ├── repaint.py          # RePaint algorithm script
 │       └── config.yml          # Configuration file
 │   ├── __init__.py    
 │   └── utils.py                # Utility functions       
 └── notebooks                   # Jupyter notebooks for exploration and presentation
 ```
+
+## Tumour Inpainting
+
+## Fine-tuning

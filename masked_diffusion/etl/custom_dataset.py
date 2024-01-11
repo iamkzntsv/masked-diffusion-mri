@@ -7,10 +7,11 @@ from ..etl.slice_extractor import SliceExtractor
 
 
 class CustomDataset(Dataset):
-    def __init__(self, path, hist_ref, transform=None):
+    def __init__(self, path, hist_ref=None, image_transform=None, mask_transform=None):
         self.slice_ext = SliceExtractor(hist_ref)
         self.images, self.masks = self.preprocess(path)
-        self.transform = transform
+        self.image_transform = image_transform
+        self.mask_transform = mask_transform
 
     def __len__(self):
         return len(self.images)
@@ -19,9 +20,10 @@ class CustomDataset(Dataset):
         image = Image.fromarray(self.images[idx].astype(np.uint8))
         mask = Image.fromarray(self.masks[idx].astype(np.uint8))
 
-        if self.transform:
-            image = self.transform["image"](image)
-            mask = self.transform["mask"](mask)
+        if self.image_transform is not None:
+            image = self.image_transform(image)
+        if self.mask_transform:
+            mask = self.mask_transform(mask)
         return image, mask
 
     def preprocess(self, path):

@@ -14,11 +14,9 @@ class SliceExtractor:
         Extract 2D slices from a 3D volume based on the amounts of brain quantity
         :param volume: nifti image representing MRI volume of a single subject
         :param mask: nifti image representing segmentation mask for corresponding MRI volume
-        :param rotate: ...
         :return: list of slices
         """
         nx, ny, nz = volume.header.get_data_shape()
-        print(nx, ny, nz)
         self.original_shape = (nx, ny, nz)
         self.affine = volume.affine
 
@@ -39,12 +37,12 @@ class SliceExtractor:
             img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
             mask = cv2.rotate(mask, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-            # Normalize
-            if np.sum(img) > 0:
-                img = img / np.max(img)
-
-            # Equalize
             if self.hist_ref is not None:
+                # Normalize
+                if np.sum(img) > 0:
+                    img = img / np.max(img)
+
+                # Equalize
                 img = match_image_histogram(img, self.hist_ref)
 
             img_slices.append(img)

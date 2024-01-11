@@ -1,28 +1,31 @@
 SHELL = /bin/bash
 
-# Default path to Conda environment
-ENV_PATH=~/miniconda3/envs/masked-diffusion-mri
+# Docker image
+DOCKER_TAG=masked-diffusion-mri:latest
 
 # Args
+DATA_PATH=
+SAVE_DIR=
+PREPROCESS_ARGS=
+INPAINT_ARGS=
 TRAIN_ARGS=
-INFER_ARGS=
 
-.PHONY: create_environment get_data train clean sample
+.PHONY: build preprocess_mri train inpaint clean sample
 
 # Default rule
-all: create_environment train
+all: build preprocess_mri inpaint
 
-create_environment:
-	conda info --envs | grep $(ENV_PATH) > /dev/null || conda env create -f environment.yml --prefix $(ENV_PATH)
+build:
+	docker build --no-cache . -f Dockerfile -t $(DOCKER_TAG)
 
-remove_environment:
-	conda env remove --prefix $(ENV_PATH)
+preprocess_mri:
+	docker run -v $(DATA_PATH):/app/data/new/raw -v $(SAVE_DIR):/app/data/new/processed $(DOCKER_TAG) python -m masked_diffusion.etl.preprocess_mri $(PREPROCESS_ARGS)
+
+inpaint:
+	docker run --gpus all -v $(DATA_PATH):/app/data/new/processed -v $(SAVE_DIR):/app/data/new/processed -m 8g $(DOCKER_TAG) python -u -m masked_diffusion.model.inpaint $(INPAINT_ARGS)
 
 train:
-	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.train $(TRAIN_ARGS)
-
-infer:
-	conda run --no-capture-output -p $(ENV_PATH) python -u -m masked_diffusion.model.infer $(INFER_ARGS)
+	docker run $(DOCKER_TAG) python -u -m masked_diffusion.model.train $(TRAIN_ARGS)
 
 clean: style
 	find . -type f -name "*.py[co]" -delete
@@ -35,7 +38,8 @@ style:
 	isort .
 
 help:
-	@echo "Commands":
-	@echo: "create_environment		: creates conda environment"
-	@echo: "remove_environment		: deletes conda environment"
-	@echo: "train					: run the training loop"
+	@echo "Commands:"
+	@echo "build					: builds docker image"
+	@echo "preprocess				: applies necessary transformations to mri volume"
+	@echo "train					: runs the training loop"
+	@echo "inpaint					: runs the inpainting"

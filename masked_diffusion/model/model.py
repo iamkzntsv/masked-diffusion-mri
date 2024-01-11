@@ -134,6 +134,7 @@ class DiffusionModel(pl.LightningModule):
         # Check if weights exist in the folder, if not - download
         check_pretrained_weights(**self.config["weights"])
         self.config["model_path"] = self.config["weights"]["save_dir"]
+
         state_dict = dist_util.load_state_dict(
             self.config["weights"]["save_dir"], map_location="cpu"
         )

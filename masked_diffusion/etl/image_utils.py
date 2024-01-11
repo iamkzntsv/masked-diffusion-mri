@@ -25,45 +25,41 @@ def match_image_histogram(source_img, reference_img):
 
 
 def get_transform(image_size):
-    transform_state = TransformState()
     return {
-        "image": image_transform(image_size, transform_state),
-        "mask": mask_transform(image_size, transform_state),
-    }, transform_state
+        "image": image_transform(image_size),
+        "mask": mask_transform(image_size),
+    }
 
 
-def get_reverse_transform(original_size, transform_state):
-    return {"image": reverse_image_transform(original_size, transform_state), "mask": None}
+def get_reverse_transform():
+    return {"image": reverse_image_transform(), "mask": None}
 
 
-def image_transform(image_size, transform_state):
+def image_transform(image_size):
     return T.Compose(
         [
             T.ToTensor(),
-            CenterCropWithOffset(transform_state),
+            CenterCropWithOffset(),
             T.Resize((image_size, image_size), interpolation=T.InterpolationMode("bilinear")),
-            T.Normalize(0.5, 0.5),
         ]
     )
 
 
-def mask_transform(image_size, transform_state):
+def mask_transform(image_size):
     return T.Compose(
         [
             T.ToTensor(),
-            CenterCropWithOffset(transform_state),
+            CenterCropWithOffset(),
             T.Resize((image_size, image_size), interpolation=T.InterpolationMode("nearest")),
             InvertMask(),
         ]
     )
 
 
-def reverse_image_transform(original_size, transform_state):
+def reverse_image_transform():
     return T.Compose(
         [
             Denormalize(0.5, 0.5),
-            ReverseCenterCropWithOffset(transform_state),
-            T.Resize((original_size, original_size), interpolation=T.InterpolationMode("bilinear")),
             ToNumpy(),
         ]
     )
@@ -86,8 +82,7 @@ class TransformState:
 
 
 class CenterCropWithOffset:
-    def __init__(self, state, target_shape=(200, 200), offset=15):
-        self.state = state
+    def __init__(self, target_shape=(200, 200), offset=15):
         self.target_shape = target_shape
         self.offset = offset
 
@@ -100,29 +95,8 @@ class CenterCropWithOffset:
         bottom = top + new_h
         right = left + new_w
 
-        self.state.set_original_size((h, w))
-
         cropped_image = image[..., top:bottom, left:right]
         return cropped_image
-
-
-class ReverseCenterCropWithOffset:
-    def __init__(self, state, target_shape=(200, 200), offset=15):
-        self.state = state
-        self.target_shape = target_shape
-        self.offset = offset
-
-    def __call__(self, cropped_image):
-        original_h, original_w = self.state.get_original_size()
-
-        pad_top = int((original_h - self.target_shape[0]) / 2) + self.offset
-        pad_bottom = original_h - (pad_top + self.target_shape[0])
-        pad_left = int((original_w - self.target_shape[1]) / 2)
-        pad_right = original_w - (pad_left + self.target_shape[1])
-
-        padded_image = F.pad(cropped_image, (pad_left, pad_right, pad_top, pad_bottom), value=0)
-
-        return padded_image
 
 
 class InvertMask:
