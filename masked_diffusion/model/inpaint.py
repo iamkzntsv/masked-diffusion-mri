@@ -39,18 +39,12 @@ def parse_args():
 def inpaint(args):
     config = update_config(load_yaml_config("masked_diffusion/model/config.yml"), vars(args))
 
-    # Get IXI dataset
-    download_and_save_dataset(**config["data"]["ixi"])
-    ref_dataset = load_from_disk(os.path.join("data/ixi/transformed", "train"))
-    hist_ref = get_reference_image(ref_dataset)
-
     config["device"] = device = get_device()
     logger.info(f"The device set to {device}")
 
-    data_path = "data/new/processed"
     dataset = CustomDataset(
-        data_path,
-        hist_ref=hist_ref,
+        "data/new/processed",
+        hist_ref=None,
         image_transform=T.Compose([T.ToTensor(), T.Normalize(0.5, 0.5)]),
         mask_transform=T.ToTensor())
 
@@ -69,7 +63,6 @@ def inpaint(args):
 
     inpainted_images = []
     for i, (image, mask) in tqdm(enumerate(dataloader), total=len(dataloader)):
-        print(torch.sum(mask))
         logger.info(f"Slice {i + 1}")
         inpainted_image = image
 
@@ -82,22 +75,26 @@ def inpaint(args):
                 **config["repaint"],
                 device=device,
             )
+            inpainted_image = reverse_transform(inpainted_image)
+
+            original_image = image.clone()
+            inpaint_mask = (mask == 0)
+            original_image[inpaint_mask] = inpainted_image[inpaint_mask]
+            inpainted_image = original_image.clone()
+
         else:
+            inpainted_image = reverse_transform(inpainted_image)
             logger.info("No tumour mask found. Skipping.")
 
-        original_image = image.clone()
-        inpaint_mask = (mask == 0)
-        original_image[inpaint_mask] = inpainted_image[inpaint_mask]
-
-        inpainted_image = reverse_transform(original_image)
         inpainted_image = np.split(inpainted_image, args.batch_size, axis=0)
-
         inpainted_images.extend(inpainted_image)
 
         # wandb.log({"image_grid": wandb.Image(inpainted_image[0])})
 
     volume = dataset.slice_ext.combine_slices(inpainted_images)
     affine = dataset.slice_ext.affine
+
+    print(f"test: {np.min(volume)}")
 
     nifti_image = np_to_nifti(volume, affine)
     save_dir = "data/new/processed/inpainted.nii.gz"

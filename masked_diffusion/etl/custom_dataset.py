@@ -17,8 +17,8 @@ class CustomDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        image = Image.fromarray(self.images[idx].astype(np.uint8))
-        mask = Image.fromarray(self.masks[idx].astype(np.uint8))
+        image = Image.fromarray(self.images[idx])
+        mask = Image.fromarray(self.masks[idx])
 
         if self.image_transform is not None:
             image = self.image_transform(image)

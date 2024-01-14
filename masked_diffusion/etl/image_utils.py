@@ -40,7 +40,7 @@ def image_transform(image_size):
         [
             T.ToTensor(),
             CenterCropWithOffset(),
-            T.Resize((image_size, image_size), interpolation=T.InterpolationMode("bilinear")),
+            T.Resize((image_size, image_size), interpolation=T.InterpolationMode("bicubic")),
         ]
     )
 
@@ -60,7 +60,7 @@ def reverse_image_transform():
     return T.Compose(
         [
             Denormalize(0.5, 0.5),
-            ToNumpy(),
+            ToNumpy()
         ]
     )
 
@@ -120,4 +120,5 @@ class ToNumpy:
     def __call__(self, image_tensor):
         image_tensor = torch.mean(image_tensor, dim=1, keepdim=True)
         image = image_tensor.permute(0, 2, 3, 1).squeeze().cpu().numpy()
+        image = np.clip(image, 0, 1)
         return image

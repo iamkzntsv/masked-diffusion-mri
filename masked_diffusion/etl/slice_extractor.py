@@ -37,13 +37,16 @@ class SliceExtractor:
             img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
             mask = cv2.rotate(mask, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
+            # Equalize
             if self.hist_ref is not None:
                 # Normalize
                 if np.sum(img) > 0:
                     img = img / np.max(img)
 
-                # Equalize
                 img = match_image_histogram(img, self.hist_ref)
+
+                img = img.astype(np.uint8)
+                mask = mask.astype(np.uint8)
 
             img_slices.append(img)
             mask_slices.append(mask)

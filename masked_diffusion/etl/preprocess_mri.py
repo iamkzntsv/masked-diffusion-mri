@@ -34,7 +34,12 @@ def main():
 
     transform = get_transform(config["model"]["image_size"])
 
-    dataset = CustomDataset("data/new/raw", hist_ref, image_transform=transform["image"], mask_transform=transform["mask"])
+    dataset = CustomDataset(
+        "data/new/raw",
+        hist_ref,
+        image_transform=transform["image"],
+        mask_transform=transform["mask"]
+    )
     dataloader = DataLoader(
         dataset,
         batch_size=1,
@@ -58,6 +63,7 @@ def main():
     affine = dataset.slice_ext.affine
 
     volume = dataset.slice_ext.combine_slices(processed_im_slices)
+    volume = np.clip(volume, 0, 1)
     nifti_volume = np_to_nifti(volume, affine)
 
     save_dir = "data/new/processed"
