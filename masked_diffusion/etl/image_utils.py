@@ -59,8 +59,7 @@ def mask_transform(image_size):
 def reverse_image_transform():
     return T.Compose(
         [
-            Denormalize(0.5, 0.5),
-            ToNumpy()
+            Denormalize(0.5, 0.5)
         ]
     )
 

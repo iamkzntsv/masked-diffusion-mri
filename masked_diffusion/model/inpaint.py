@@ -64,7 +64,7 @@ def inpaint(args):
     inpainted_images = []
     for i, (image, mask) in tqdm(enumerate(dataloader), total=len(dataloader)):
         logger.info(f"Slice {i + 1}")
-        inpainted_image = image
+        inpainted_image = torch.zeros_like(image)
 
         mask[mask > 0] = 1
         mask_sum = torch.sum(mask != 1)  # invert mask before summation
@@ -86,6 +86,9 @@ def inpaint(args):
             inpainted_image = reverse_transform(inpainted_image)
             logger.info("No tumour mask found. Skipping.")
 
+        inpainted_image = torch.mean(inpainted_image, dim=1, keepdim=True)
+        inpainted_image = inpainted_image.permute(0, 2, 3, 1).squeeze().cpu().numpy()
+
         inpainted_image = np.split(inpainted_image, args.batch_size, axis=0)
         inpainted_images.extend(inpainted_image)
 
@@ -93,8 +96,6 @@ def inpaint(args):
 
     volume = dataset.slice_ext.combine_slices(inpainted_images)
     affine = dataset.slice_ext.affine
-
-    print(f"test: {np.min(volume)}")
 
     nifti_image = np_to_nifti(volume, affine)
     save_dir = "data/new/processed/inpainted.nii.gz"
