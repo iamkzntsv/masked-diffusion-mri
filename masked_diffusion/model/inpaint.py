@@ -64,7 +64,7 @@ def inpaint(args):
     inpainted_images = []
     for i, (image, mask) in tqdm(enumerate(dataloader), total=len(dataloader)):
         logger.info(f"Slice {i + 1}")
-        inpainted_image = torch.zeros_like(image)
+        inpainted_image = image.clone()
 
         mask[mask > 0] = 1
         mask_sum = torch.sum(mask != 1)  # invert mask before summation
@@ -75,9 +75,14 @@ def inpaint(args):
                 **config["repaint"],
                 device=device,
             )
+            original_image = image.clone()
+            original_image = original_image.to(device)
+            original_image = reverse_transform(original_image)
+
             inpainted_image = reverse_transform(inpainted_image)
 
-            original_image = image.clone()
+            original_image = torch.mean(original_image, dim=1, keepdim=True)
+
             inpaint_mask = (mask == 0)
             original_image[inpaint_mask] = inpainted_image[inpaint_mask]
             inpainted_image = original_image.clone()
