@@ -41,8 +41,11 @@ Note: Before running the script make sure to perform skull-stripping and registr
 ```
 make preprocess_mri DATA_PATH="/your_subj_path" SAVE_DIR="/save_dir_path" PREPROCESS_ARGS="--offset 15"
 ```
+
 ## Tumour Inpainting
 To perform MRI image inpainting run the following command on a `.mgz` MRI file obtained from MRI preprocessing step.
 ```
 make inpaint DATA_PATH="/your_subj_path" SAVE_DIR="/save_dir_path" INPAINT_ARGS="--batch_size 1 --num_inference_steps 250 --jump_length 10 --jump_n_sample 10"
 ```
+
+NOTE: For both preprocessing and inpainting, the t1 image and tumour mask files in `SAVE_DIR` should be in `.mgz` format (can be obtained using FreeSurfer's `mri_convert`) and be named as follows: `t1.mgz`, `mask.mgz`.
