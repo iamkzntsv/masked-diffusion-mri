@@ -22,7 +22,7 @@ preprocess_mri:
 	docker run -v $(DATA_PATH):/app/data/new/raw -v $(SAVE_DIR):/app/data/new/processed $(DOCKER_TAG) python -m masked_diffusion.etl.preprocess_mri $(PREPROCESS_ARGS)
 
 inpaint:
-	docker run -v $(DATA_PATH):/app/data/new/processed -v $(SAVE_DIR):/app/data/new/processed -m 8g $(DOCKER_TAG) python -u -m masked_diffusion.model.inpaint $(INPAINT_ARGS)
+	docker run --gpus all -v $(DATA_PATH):/app/data/new/processed -v $(SAVE_DIR):/app/data/new/processed -m 8g $(DOCKER_TAG) python -u -m masked_diffusion.model.inpaint $(INPAINT_ARGS)
 
 train:
 	docker run $(DOCKER_TAG) python -u -m masked_diffusion.model.train $(TRAIN_ARGS)
