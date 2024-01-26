@@ -31,7 +31,7 @@ preprocess_mri:
 
 
 inpaint:
-	docker run --gpus '"device=0"' \
+	docker run --gpus '"device=$(GPU_ID)"' \
 	-v $(DATA_PATH):/app/data/new/processed \
     -v $(SAVE_DIR):/app/data/new/processed \
     -v $(WEIGHTS_PATH):/app/masked_diffusion/model/pretrained \
