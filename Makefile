@@ -4,25 +4,40 @@ SHELL = /bin/bash
 DOCKER_TAG=masked-diffusion-mri:latest
 
 # Args
+WEIGHTS_PATH=
 DATA_PATH=
 SAVE_DIR=
 PREPROCESS_ARGS=
 INPAINT_ARGS=
 TRAIN_ARGS=
+GPU_ID=0
 
-.PHONY: build preprocess_mri train inpaint clean sample
+.PHONY: get_weights build preprocess_mri train inpaint clean sample
 
 # Default rule
-all: build preprocess_mri inpaint
+all: get_weights build preprocess_mri inpaint
+
+get_weights:
+	python -u -m get_weights $(SAVE_DIR)
 
 build:
 	docker build --no-cache . -f Dockerfile -t $(DOCKER_TAG)
 
 preprocess_mri:
-	docker run -v $(DATA_PATH):/app/data/new/raw -v $(SAVE_DIR):/app/data/new/processed $(DOCKER_TAG) python -m masked_diffusion.etl.preprocess_mri $(PREPROCESS_ARGS)
+	docker run
+	-v $(DATA_PATH):/app/data/new/raw
+	-v $(SAVE_DIR):/app/data/new/processed
+	$(DOCKER_TAG) python -m masked_diffusion.etl.preprocess_mri $(PREPROCESS_ARGS)
+
 
 inpaint:
-	docker run --gpus all -v $(DATA_PATH):/app/data/new/processed -v $(SAVE_DIR):/app/data/new/processed -m 8g $(DOCKER_TAG) python -u -m masked_diffusion.model.inpaint $(INPAINT_ARGS)
+	docker run --gpus '"device=0"' \
+	-v $(DATA_PATH):/app/data/new/processed \
+    -v $(SAVE_DIR):/app/data/new/processed \
+    -v $(WEIGHTS_PATH):/app/masked_diffusion/model/pretrained \
+    -m 8g \
+    $(DOCKER_TAG) python -u -m masked_diffusion.model.inpaint $(INPAINT_ARGS)
+
 
 train:
 	docker run $(DOCKER_TAG) python -u -m masked_diffusion.model.train $(TRAIN_ARGS)
@@ -39,7 +54,8 @@ style:
 
 help:
 	@echo "Commands:"
+	@echo "get_weights				: download model weights"
 	@echo "build					: builds docker image"
-	@echo "preprocess				: applies necessary transformations to mri volume"
+	@echo "preprocess_mri			: applies necessary transformations to mri volume"
 	@echo "train					: runs the training loop"
 	@echo "inpaint					: runs the inpainting"

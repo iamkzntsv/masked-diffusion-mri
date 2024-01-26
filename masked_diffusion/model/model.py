@@ -17,7 +17,6 @@ from ..model.guided_diffusion.script_util import (
     create_model_and_diffusion,
     model_and_diffusion_defaults,
 )
-from ..model.model_utils import check_pretrained_weights
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -131,15 +130,9 @@ class DiffusionModel(pl.LightningModule):
         return torch.mean(sample, dim=1, keepdim=True)
 
     def set_weights(self) -> None:
-        # Check if weights exist in the folder, if not - download
-        check_pretrained_weights(**self.config["weights"])
-        self.config["model_path"] = self.config["weights"]["save_dir"]
-
         state_dict = dist_util.load_state_dict(
             self.config["weights"]["save_dir"], map_location="cpu"
         )
-
-        # Set model weights
         self.unet.load_state_dict(state_dict)
 
 

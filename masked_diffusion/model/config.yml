@@ -8,7 +8,6 @@ model:
   batch_size: 1
   image_size: 256
   use_ddim: false
-  model_path: ""
   lr: 0.001
 scheduler:
   beta_end : 0.02

@@ -5,15 +5,13 @@ import os
 import nibabel as nib
 import numpy as np
 import torch
-from datasets import load_from_disk
 from torch.utils.data import DataLoader
 import torchvision.transforms as T
 from tqdm import tqdm
 
 from ..etl.custom_dataset import CustomDataset
-from ..etl.data_utils import download_and_save_dataset, np_to_nifti
+from ..etl.data_utils import np_to_nifti
 from ..etl.image_utils import (
-    get_reference_image,
     get_reverse_transform,
 )
 from ..model.model import DiffusionModel
@@ -89,7 +87,7 @@ def inpaint(args):
 
         else:
             inpainted_image = reverse_transform(inpainted_image)
-            logger.info("No tumour mask found. Skipping.")
+            logger.info("No mask found. Skipping.")
 
         inpainted_image = torch.mean(inpainted_image, dim=1, keepdim=True)
         inpainted_image = inpainted_image.permute(0, 2, 3, 1).squeeze().cpu().numpy()

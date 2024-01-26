@@ -43,9 +43,13 @@ make preprocess_mri DATA_PATH="/your_subj_path" SAVE_DIR="/save_dir_path" PREPRO
 ```
 
 ## Tumour Inpainting
+You can download the weights for the model using:
+```
+make get_weights SAVE_DIR="--path /save_dir_path"
+```
 To perform MRI image inpainting run the following command on a `.mgz` MRI file obtained from MRI preprocessing step.
 ```
-make inpaint DATA_PATH="/your_subj_path" SAVE_DIR="/save_dir_path" INPAINT_ARGS="--batch_size 1 --num_inference_steps 250 --jump_length 10 --jump_n_sample 10"
+make inpaint DATA_PATH="/your_subj_path" WEIGHTS_PATH="/weights_folder_path" SAVE_DIR="/save_dir_path" INPAINT_ARGS="--batch_size 1 --num_inference_steps 250 --jump_length 10 --jump_n_sample 10" GPU_ID=0
 ```
 
 NOTE: For both preprocessing and inpainting, the t1 image and tumour mask files in `SAVE_DIR` should be in `.mgz` format (can be obtained using FreeSurfer's `mri_convert`) and be named as follows: `t1.mgz`, `mask.mgz`.
