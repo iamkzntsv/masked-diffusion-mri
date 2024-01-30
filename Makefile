@@ -24,7 +24,7 @@ build:
 	docker build --no-cache . -f Dockerfile -t $(DOCKER_TAG)
 
 preprocess_mri:
-	docker run
+	docker run \
 	-v $(DATA_PATH):/app/data/new/raw
 	-v $(SAVE_DIR):/app/data/new/processed
 	$(DOCKER_TAG) python -m masked_diffusion.etl.preprocess_mri $(PREPROCESS_ARGS)
