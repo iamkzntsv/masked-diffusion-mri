@@ -73,7 +73,7 @@ def main():
         "thalamus": 147
     }
 
-    base_path = "/Users/sandunipinnawala/Documents/masked-diffusion-mri/experiments/hcp/100206/masks"
+    base_path = "/{path}/masked-diffusion-mri/experiments/hcp/{subject}/masks"
 
     for structure, slice_number in structures.items():
         process_structure(structure, slice_number, base_path)

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Base directory
-base_dir="/its/home/mp761/masked-diffusion-mri/data/hcp/100206/structures"
-weights_dir="/its/home/mp761/masked-diffusion-mri/masked_diffusion/model/pretrained"
+base_dir="/{path}/masked-diffusion-mri/data/hcp/{subject}/structures"
+weights_dir="/{path}/masked-diffusion-mri/masked_diffusion/model/pretrained"
 
 # Arguments
 preprocess_args="--offset 15"
