@@ -1,0 +1,25 @@
+# binarize.sh
+mri_binarize --i aseg.auto_noCCseg.mgz --match 54 --o right_amygdala.mgz  
+...
+
+# convert.sh
+mri_convert right_amygdala.mgz right_amygdala.nii
+...
+
+# extract_slice.py
+...
+
+mri_convert right_amygdala_slice_162.nii mask.mgz
+...
+
+scp -r /.. bayes:/its/home/mp761/...
+...
+
+# run_right.sh
+
+make preprocess_mri DATA_PATH="/" SAVE_DIR="/" PREPROCESS_ARGS="--offset 15"
+
+make inpaint DATA_PATH="/" WEIGHTS_PATH="/" SAVE_DIR="/" INPAINT_ARGS="--batch_size 1 --num_inference_steps 250 --jump_length 10 --jump_n_sample 10" GPU_ID=0
+
+
+
