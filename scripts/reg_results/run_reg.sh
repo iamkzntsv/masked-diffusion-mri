@@ -1,6 +1,6 @@
 #!/bin/bash
 
-base_dir="/its/home/mp761/masked-diffusion-mri-reg/hcp/100206/"
+base_dir="/{path}/masked-diffusion-mri-reg/hcp/{subject}/"
 
 # Find 'reg.sh'
 find "$base_dir" -type f -name "reg.sh" | while read -r reg_file; do
